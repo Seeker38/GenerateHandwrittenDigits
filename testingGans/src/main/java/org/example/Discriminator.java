@@ -1,73 +1,76 @@
 package org.example;
 
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.activations.impl.ActivationSigmoid;
-import org.nd4j.linalg.activations.impl.ActivationReLU;
-import org.nd4j.linalg.learning.config.Adam;
-import org.nd4j.linalg.lossfunctions.impl.LossBinaryXENT;
-import org.nd4j.linalg.api.ops.impl.transforms.gradient.SigmoidDerivative;
+import org.deeplearning4j.nn.api.OptimizationAlgorithm;
+import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
+import org.nd4j.linalg.activations.Activation;
+import org.nd4j.linalg.api.ops.LossFunction;
+import org.nd4j.linalg.lossfunctions.ILossFunction;
+import org.nd4j.linalg.lossfunctions.LossFunctions;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.deeplearning4j.nn.api.OptimizationAlgorithm;
+import org.deeplearning4j.nn.conf.GradientNormalization;
+import org.deeplearning4j.nn.conf.Updater;
 import org.deeplearning4j.nn.weights.WeightInit;
-import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
+import org.nd4j.linalg.learning.config.Adam;
+import org.nd4j.linalg.learning.regularization.Regularization;
+import org.nd4j.linalg.learning.regularization.WeightDecay;
+import org.deeplearning4j.nn.conf.layers.BatchNormalization;
 
 public class Discriminator {
     private MultiLayerNetwork model;
 
     public Discriminator() {
-        // Setting the neural network configuration
         int numInputs = 784;
         int numOutputs = 1;
-        int numHiddenNodes1 = 1024;
-        int numHiddenNodes2 = 512;
-        int numHiddenNodes3 = 256;
         double dropoutProb = 0.3;
-        double learningRate = 0.0002;
-        int numIterations = 1;
-        NeuralNetConfiguration.ListBuilder builder = new NeuralNetConfiguration.Builder()
-                .seed(111)
-                .updater(new Adam(learningRate))
-                .weightInit(WeightInit.XAVIER)
+
+        MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
+                .seed(123)
+                .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
+                .updater(new Adam(0.0002, 0.5, 0.999, 1e-8))
+                .gradientNormalization(GradientNormalization.RenormalizeL2PerLayer)
                 .list()
-                .layer(new DenseLayer.Builder()
-                        .nIn(numInputs)
-                        .nOut(numHiddenNodes1)
-                        .activation(new ActivationReLU())
-                        .dropOut(dropoutProb)
-                        .build())
-                .layer(new DenseLayer.Builder()
-                        .nIn(numHiddenNodes1)
-                        .nOut(numHiddenNodes2)
-                        .activation(new ActivationReLU())
-                        .dropOut(dropoutProb)
-                        .build())
-                .layer(new DenseLayer.Builder()
-                        .nIn(numHiddenNodes2)
-                        .nOut(numHiddenNodes3)
-                        .activation(new ActivationReLU())
-                        .dropOut(dropoutProb)
-                        .build())
-                .layer(new OutputLayer.Builder()
-                        .nIn(numHiddenNodes3)
-                        .nOut(numOutputs)
-                        .activation(new ActivationSigmoid())
-                        .lossFunction(new LossBinaryXENT())
-                        .build());
+                .layer(new DenseLayer.Builder().nIn(numInputs).nOut(1024)
+                        .activation(Activation.RELU).dropOut(dropoutProb).build())
+                .layer(new DenseLayer.Builder().nIn(1024).nOut(512)
+                        .activation(Activation.RELU).dropOut(dropoutProb).build())
+                .layer(new DenseLayer.Builder().nIn(512).nOut(256)
+                        .activation(Activation.RELU).dropOut(dropoutProb).build())
+                .layer(new OutputLayer.Builder(LossFunctions.LossFunction.XENT)
+                        .nIn(256).nOut(numOutputs).activation(Activation.SIGMOID).build())
+                .build();
 
-        // Building the neural network model
-        this.model = new MultiLayerNetwork(builder.build());
-        this.model.init();
-        this.model.setListeners(new ScoreIterationListener(numIterations));
+        model = new MultiLayerNetwork(conf);
+        model.init();
     }
 
-    public INDArray predict(INDArray input) {
-        return this.model.output(input);
+    public double train(INDArray inputs, INDArray labels) {
+        model.setInput(inputs);
+        model.setLabels(labels);
+        model.fit();
+        return model.score();
     }
 
-    public void fit(INDArray input, INDArray label) {
-        this.model.fit(input, label);
+    public void setParams(Adam optimizer, LossFunction lossFunction) {
+        MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
+                .updater(optimizer)
+                .list()
+                .layer(new OutputLayer.Builder((ILossFunction) lossFunction)
+                        .activation(Activation.SIGMOID)
+                        .nIn(256)
+                        .nOut(1)
+                        .build())
+                .build();
+
+        model.setLayerWiseConfigurations(conf);
+    }
+
+
+    public MultiLayerNetwork getModel() {
+        return model;
     }
 }

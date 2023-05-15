@@ -8,11 +8,14 @@ import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.api.ops.LossFunction;
 import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.learning.config.Adam;
+import org.nd4j.linalg.lossfunctions.ILossFunction;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
 public class Generator {
-    private MultiLayerNetwork model;
+    private static MultiLayerNetwork model;
 
     public Generator() {
         int numInputs = 100;
@@ -35,6 +38,34 @@ public class Generator {
 
         model = new MultiLayerNetwork(conf);
         model.init();
+    }
+
+    public void setParams(Adam optimizer, LossFunction lossFunction) {
+        MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
+                .updater(optimizer)
+                .list()
+                .layer(new OutputLayer.Builder((ILossFunction) lossFunction)
+                        .activation(Activation.SIGMOID)
+                        .nIn(256)
+                        .nOut(1)
+                        .build())
+                .build();
+
+        model.setLayerWiseConfigurations(conf);
+    }
+
+    public static INDArray forward(INDArray latentSpaceSamples) {
+        INDArray generated = model.output(latentSpaceSamples);
+        generated = generated.reshape(latentSpaceSamples.size(0), 1, 28, 28);
+        return generated;
+    }
+
+    public double train(INDArray latentSpaceSamples, INDArray labels) {
+        model.setInput(latentSpaceSamples);
+        model.setLabels(labels);
+        model.computeGradientAndScore();
+        model.fit();
+        return model.score();
     }
 
     public INDArray generateSamples(int batchSize) {

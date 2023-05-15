@@ -9,6 +9,51 @@
     <version>1.0-SNAPSHOT</version>
     <dependencies>
 
+        <!-- https://mvnrepository.com/artifact/org.tensorflow/libtensorflow -->
+        <dependency>
+            <groupId>org.tensorflow</groupId>
+            <artifactId>libtensorflow</artifactId>
+            <version>1.15.0</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.tensorflow/libtensorflow_jni_gpu -->
+        <dependency>
+            <groupId>org.tensorflow</groupId>
+            <artifactId>libtensorflow_jni_gpu</artifactId>
+            <version>1.15.0</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/ai.djl/api -->
+        <dependency>
+            <groupId>ai.djl</groupId>
+            <artifactId>api</artifactId>
+            <version>0.16.0</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/ai.djl.pytorch/pytorch-engine -->
+        <dependency>
+            <groupId>ai.djl.pytorch</groupId>
+            <artifactId>pytorch-engine</artifactId>
+            <version>0.16.0</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/ai.djl.pytorch/pytorch-native-auto -->
+        <dependency>
+            <groupId>ai.djl.pytorch</groupId>
+            <artifactId>pytorch-native-auto</artifactId>
+            <version>1.8.1</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.pytorch/pytorch_java_only -->
+        <dependency>
+            <groupId>org.pytorch</groupId>
+            <artifactId>pytorch_java_only</artifactId>
+            <version>1.9.0</version>
+            <scope>provided</scope>
+        </dependency>
+
+
+
         <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -24,25 +69,35 @@
             <scope>test</scope>
         </dependency>
 
-
-
+        <!-- https://mvnrepository.com/artifact/org.deeplearning4j/deeplearning4j-core -->
         <dependency>
             <groupId>org.deeplearning4j</groupId>
             <artifactId>deeplearning4j-core</artifactId>
-            <version>1.0.0-M1.1</version>
+            <version>1.0.0-beta7</version>
         </dependency>
+
+
+        <!-- https://mvnrepository.com/artifact/org.nd4j/nd4j-api -->
+        <dependency>
+            <groupId>org.nd4j</groupId>
+            <artifactId>nd4j-api</artifactId>
+            <version>1.0.0-beta7</version>
+        </dependency>
+
         <dependency>
             <groupId>org.nd4j</groupId>
             <artifactId>nd4j-native-platform</artifactId>
-            <version>1.0.0-M1.1</version>
+            <version>1.0.0-beta7</version>
         </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.nd4j/nd4j-cuda-10.2 -->
         <dependency>
             <groupId>org.nd4j</groupId>
-            <artifactId>nd4j-cuda-11.0-platform</artifactId>
-            <version>1.0.0-M1.1</version>
-            <!-- use provided scope if you don't have a CUDA-capable GPU -->
-            <scope>provided</scope>
+            <artifactId>nd4j-cuda-10.2</artifactId>
+            <version>1.0.0-beta7</version>
         </dependency>
+
+
 
 
         <!-- https://mvnrepository.com/artifact/org.seleniumhq.selenium/selenium-java -->
