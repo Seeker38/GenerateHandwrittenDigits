@@ -77,11 +77,13 @@
         </dependency>
 
 
+        <!-- https://mvnrepository.com/artifact/org.nd4j/nd4j-api -->
         <dependency>
             <groupId>org.nd4j</groupId>
             <artifactId>nd4j-api</artifactId>
-            <version>1.0.0-M1.1</version>
+            <version>1.0.0-beta7</version>
         </dependency>
+
         <dependency>
             <groupId>org.nd4j</groupId>
             <artifactId>nd4j-native-platform</artifactId>
