@@ -1,248 +1,124 @@
-package org.example;
-
-import java.awt.image.WritableRaster;
-import java.io.File;
-import java.util.*;
-import java.util.Random;
-
-import ai.djl.pytorch.engine.PtEngine;
-import ai.djl.util.cuda.CudaUtils;
-import org.nd4j.jita.workspace.CudaWorkspace;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.api.ops.LossFunction;
-import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.dataset.DataSet;
-import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
-import org.nd4j.linalg.dataset.api.preprocessor.DataNormalization;
-import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
-import org.deeplearning4j.datasets.iterator.impl.MnistDataSetIterator;
-
-
-import org.nd4j.linalg.activations.impl.ActivationSigmoid;
-import org.nd4j.linalg.activations.impl.ActivationReLU;
-import org.nd4j.linalg.learning.config.Adam;
-import org.nd4j.linalg.lossfunctions.LossFunctions;
-import org.nd4j.linalg.lossfunctions.impl.LossBinaryXENT;
-import org.nd4j.linalg.api.ops.impl.transforms.gradient.SigmoidDerivative;
-import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
-import org.deeplearning4j.nn.conf.layers.DenseLayer;
-import org.deeplearning4j.nn.conf.layers.OutputLayer;
-import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
-import org.deeplearning4j.nn.weights.WeightInit;
-import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
-
-
-
-import javax.imageio.ImageIO;
-import javax.swing.*;
-import java.awt.GridLayout;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
-
-import ai.djl.Device;
-import ai.djl.engine.Engine;
-import ai.djl.ndarray.NDManager;
-
-
-public class GANS {
-    Discriminator discriminator;
-    Generator generator;
-    DataSetIterator trainIter;
-
-
-
-    public static void main(String[] args) throws IOException {
-
-        // Set seed for reproducibility
-        long seed = 1234;
-        Random random = new Random(seed);
-
-        // Check if GPU is available
-        int gpuCount = Engine.getInstance().getGpuCount();
-        NDManager manager = NDManager.newBaseManager();
-        if (gpuCount > 0) {
-            // Use GPU for computations
-            System.out.println("GPU available");
-            manager = manager.newSubManager(Device.gpu());
-        } else {
-            // Use CPU for computations
-            System.out.println("GPU not available");
-            manager = manager.newSubManager(Device.cpu());
-        }
-
-
-
-        // Creating the data transformation pipeline
-        DataNormalization scaler = new ImagePreProcessingScaler(-0.5, 0.5);
-        int batchSize = 32;
-        int numExamples = 60000; // number of examples in the MNIST training set
-        boolean binarize = true;
-        DataSetIterator trainIter = new MnistDataSetIterator(batchSize, numExamples, binarize);
-        trainIter.setPreProcessor(scaler);
-
-
-        // Loading the MNIST dataset
-        DataSet ds = trainIter.next();
-        INDArray features = ds.getFeatures();
-        INDArray labels = ds.getLabels();
-
-        // Displaying the first 16 samples
-        SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("MNIST Samples");
-            frame.setLayout(new GridLayout(4, 4));
-            for (int i = 0; i < 16; i++) {
-                BufferedImage img = new BufferedImage(28, 28, BufferedImage.TYPE_BYTE_GRAY);
-                for (int j = 0; j < 28 * 28; j++) {
-                    int x = j % 28;
-                    int y = j / 28;
-                    int value = (int) (255 * (features.getDouble(i, j) + 0.5));
-                    img.setRGB(x, y, value << 16 | value << 8 | value);
-                }
-                JLabel label = new JLabel(new ImageIcon(img));
-                JPanel panel = new JPanel();
-                panel.add(label);
-                frame.add(panel);
-            }
-            frame.pack();
-            frame.setVisible(true);
-        });
-
-
-
-        // Creating the Generator and Discriminator instances
-        Discriminator discriminator = new Discriminator();
-        Generator generator = new Generator();
-
-        // Training the GAN
-        int num_epochs = 10;
-        float lr = 0.0002f;
-        int batch_size = 32;
-        train(discriminator, generator, trainIter, num_epochs, lr, batch_size);
-
-
-    }
+//package org.example;
+//import ai.djl.ModelException;
+//import ai.djl.training.dataset.Batch;
+//import ai.djl.training.dataset.RandomAccessDataset;
+//import ai.djl.training.loss.Loss;
+//import ai.djl.translate.TranslateException;
+//import ai.djl.util.ZipUtils.EntryFilter;
+//import ai.djl.util.ZipUtils.ZipEntryProcessor;
+//import ai.djl.util.ZipUtils.ZipOutputStreamBuilder;
 //
-//    public static void train(Discriminator discriminator, Generator generator, DataSetIterator trainIter, int num_epochs, float lr, int batch_size) {
-//        // Set up loss function and optimizers
-//        LossFunction loss_function = LossFunctions.LossFunctionBuilder.buildLossFunctionByString("BinaryCrossentropy");
-//        Adam optimizer_discriminator = new Adam(lr, beta1, beta2, epsilon);
-//        Adam optimizer_generator = new Adam(lr, beta1, beta2, epsilon);
+//import java.io.IOException;
+//import java.nio.file.Path;
+//import java.nio.file.Paths;
+//import java.util.List;
 //
-//        List<BufferedImage> images = new ArrayList<>();
+//public class GANS {
 //
-//        for (int epoch = 0; epoch < num_epochs; epoch++) {
-//            System.out.println("Epoch " + epoch);
+//    private static final int LATENT_DIM = 100;
+//    private static final int BATCH_SIZE = 32;
+//    private static final int EPOCHS = 50;
+//    private static final float LEARNING_RATE = 0.0001f;
+//    private static final int NUM_SAMPLES = 16;
 //
-//            while (trainIter.hasNext()) {
-//                // Data for training the discriminator
-//                INDArray real_samples = trainIter.next().getFeatures();
-//                INDArray real_samples_labels = Nd4j.ones(batch_size, 1);
-//                INDArray latent_space_samples = Nd4j.randn(batch_size, 100);
-//                INDArray generated_samples = generator.forward(latent_space_samples);
-//                INDArray generated_samples_labels = Nd4j.zeros(batch_size, 1);
-//                INDArray all_samples = Nd4j.vstack(real_samples, generated_samples);
-//                INDArray all_samples_labels = Nd4j.vstack(real_samples_labels, generated_samples_labels);
+//    public static void main(String[] args) throws IOException, ModelException, TranslateException {
+//        // Set random seed for reproducibility
+//        System.setProperty("ai.djl.pytorch.randomSeed", "123");
 //
-//                // Training the discriminator
-//                discriminator.setParams(optimizer_discriminator, loss_function);
-//                double loss_discriminator = discriminator.train(all_samples, all_samples_labels);
+//        // Select device based on availability of a GPU
+//        String device = "cpu";
+//        if (Boolean.parseBoolean(System.getProperty("ai.djl.pytorch.useGpu", "false"))) {
+//            device = "cuda";
+//        }
 //
-//                // Data for training the generator
-//                latent_space_samples = Nd4j.randn(batch_size, 100);
+//        // Define image transformations
+//        ImageTransform transform = new ImageTransform.Builder()
+//                .add(new ToTensor())
+//                .add(new Normalize(0.5f, 0.5f))
+//                .build();
 //
-//                // Training the generator
-//                generator.setParams(optimizer_generator, loss_function);
-//                double loss_generator = generator.train(latent_space_samples, Nd4j.ones(batch_size, 1));
+//        // Load MNIST training dataset
+//        RandomAccessDataset trainSet = HandwrittenDigitsGenerator.randomTrainSet(60000, transform);
 //
-//                // Print losses
-//                if (trainIter.getCurrentCursorPosition() % 100 == 0) {
-//                    System.out.println("Discriminator loss: " + loss_discriminator + ", Generator loss: " + loss_generator);
+//        // Create DataLoader for training dataset
+//        DataLoader trainLoader = trainSet.getData(trainSet.getBatchSize(), true);
+//
+//        // Display a 4x4 grid of real samples
+//        displaySamples(trainLoader, 4, 4);
+//
+//        // Create Discriminator and move it to the selected device
+//        Discriminator discriminator = new Discriminator();
+//        discriminator.setDevice(device);
+//
+//        // Create Generator and move it to the selected device
+//        Generator generator = new Generator();
+//        generator.setDevice(device);
+//        // Define loss function
+//        Loss lossFunction = new SigmoidBinaryCrossEntropyLoss();
+//
+//        // Create optimizers
+//        Adam optimizerDiscriminator = Adam.builder()
+//                .optLearningRate(LEARNING_RATE)
+//                .build();
+//        Adam optimizerGenerator = Adam.builder()
+//                .optLearningRate(LEARNING_RATE)
+//                .build();
+//
+//        // Create empty list to store generated images
+//        List<Image> images = new ArrayList<>();
+//
+//        // Main training loop
+//        for (int epoch = 1; epoch <= EPOCHS; epoch++) {
+//            for (Batch batch : trainLoader) {
+//                NDList realSamples = batch.getData().singletonOrThrow();
+//                NDList mnistLabels = batch.getLabels().singletonOrThrow();
+//
+//                // Move data to the selected device
+//                realSamples.attach(device);
+//                mnistLabels.attach(device);
+//
+//                // Generate random samples from latent space
+//                NDList latentSpaceSamples = generator.generateLatentSamples(realSamples.size());
+//
+//                try (GradientCollector collector = trainer.newGradientCollector()) {
+//                    // Train discriminator
+//                    NDList discriminatorInput = new NDList(realSamples, latentSpaceSamples);
+//                    NDList discriminatorOutput = discriminator.forward(discriminatorInput);
+//
+//                    NDList realSamplesLabels = new NDList(mnistLabels);
+//                    NDList generatedSamplesLabels = new NDList(generator.getGeneratedLabels(realSamples.size()));
+//
+//                    NDList discriminatorLoss = lossFunction.evaluate(discriminatorOutput, realSamplesLabels);
+//                    discriminatorLoss.backward();
+//                    optimizerDiscriminator.step();
+//                    collector.backward(discriminatorLoss.get(0));
+//
+//                    // Train generator
+//                    NDList generatedSamples = generator.generateSamples(realSamples.size());
+//                    NDList generatorOutput = discriminator.forward(new NDList(generatedSamples));
+//                    NDList generatorLoss = lossFunction.evaluate(generatorOutput, realSamplesLabels);
+//                    generatorLoss.backward();
+//                    optimizerGenerator.step();
+//                    collector.backward(generatorLoss.get(0));
 //                }
 //            }
-//            trainIter.reset();
+//
+//            // Print loss for last batch of the epoch
+//            System.out.printf("Epoch [%d/%d], Discriminator Loss: %.4f, Generator Loss: %.4f%n",
+//                    epoch, EPOCHS, discriminatorLoss.getFloat(0), generatorLoss.getFloat(0));
+//
+//            // Generate and store batch of new images
+//            NDList generatedImages = generator.generateSamples(NUM_SAMPLES);
+//            for (int i = 0; i < NUM_SAMPLES; i++) {
+//                Image generatedImage = ImageFactory.getInstance().fromNDArray(generatedImages.singletonOrThrow().get(i));
+//                images.add(generatedImage.toImage());
+//            }
 //        }
 //
-//        // Display sample images
-//        JFrame frame = new JFrame("GAN Samples");
-//        frame.setLayout(new GridLayout(4, 4));
-//        for (BufferedImage img : images) {
-//            JLabel label = new JLabel(new ImageIcon(img));
-//            JPanel panel = new JPanel();
-//            panel.add(label);
-//            frame.add(panel);
-//        }
-//        frame.pack();
-//        frame.setVisible(true);
+//        // Save generated images as animated GIF
+//        Path outputPath = Paths.get("generated_images.gif");
+//        ImageVisualization.saveAsGif(images, outputPath, 5);
 //    }
+//}
+//
 
-    public void train(int num_epochs, float lr, int batch_size) {
-        // Set up loss function and optimizers
-        LossFunction loss_function = new BinaryCrossEntropyLoss();
-        Adam optimizer_discriminator = new Adam(lr);
-        Adam optimizer_generator = new Adam(lr);
-
-        List<BufferedImage> images = new ArrayList<>();
-
-        for (int epoch = 0; epoch < num_epochs; epoch++) {
-            System.out.println("Epoch " + epoch);
-
-            for (int n = 0; n < trainIter.numExamples() / batch_size; n++) {
-                // Data for training the discriminator
-                INDArray real_samples = trainIter.next().getFeatures();
-                INDArray real_samples_labels = Nd4j.ones(batch_size, 1);
-                INDArray latent_space_samples = Nd4j.randn(batch_size, 100);
-                INDArray generated_samples = generator.forward(latent_space_samples);
-                INDArray generated_samples_labels = Nd4j.zeros(batch_size, 1);
-                INDArray all_samples = Nd4j.vstack(real_samples, generated_samples);
-                INDArray all_samples_labels = Nd4j.vstack(real_samples_labels, generated_samples_labels);
-
-                // Training the discriminator
-                discriminator.setParams(optimizer_discriminator, loss_function);
-                double loss_discriminator = discriminator.train(all_samples, all_samples_labels);
-
-                // Data for training the generator
-                latent_space_samples = Nd4j.randn(batch_size, 100);
-
-                // Training the generator
-                generator.setParams(optimizer_generator, loss_function);
-                INDArray ones = Nd4j.ones(batch_size, 1);
-                double loss_generator = generator.train(latent_space_samples, ones);
-
-                // Print losses
-                if (n % 100 == 0) {
-                    System.out.println("Discriminator loss: " + loss_discriminator + ", Generator loss: " + loss_generator);
-                }
-
-                // Generate sample images from the generator
-                if (n % 1000 == 0) {
-                    INDArray latent_space_samples_sample = Nd4j.randn(16, 100);
-                    INDArray generated_samples_sample = generator.forward(latent_space_samples_sample);
-                    generated_samples_sample = generated_samples_sample.mul(0.5).add(0.5); // scale to [0, 1]
-                    for (int i = 0; i < 16; i++) {
-                        BufferedImage img = new BufferedImage(28, 28, BufferedImage.TYPE_BYTE_GRAY);
-                        WritableRaster raster = img.getRaster();
-                        for (int j = 0; j < 28 * 28; j++) {
-                            int x = j % 28;
-                            int y = j / 28;
-                            int value = (int) (255 * generated_samples_sample.getDouble(i, j));
-                            raster.setSample(x, y, 0, value);
-                        }
-                        images.add(img);
-                    }
-                }
-            }
-        }
-
-        // Display sample images
-        JFrame frame = new JFrame("GAN Samples");
-        frame.setLayout(new GridLayout(4, 4));
-        for (BufferedImage img : images) {
-            JLabel label = new JLabel(new ImageIcon(img));
-            JPanel panel = new JPanel();
-            panel.add(label);
-            frame.add(panel);
-        }
-        frame.pack();
-        frame.setVisible(true);
-    }
-}

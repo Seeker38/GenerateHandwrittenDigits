@@ -1,76 +1,32 @@
 package org.example;
 
-import org.deeplearning4j.nn.api.OptimizationAlgorithm;
-import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
-import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
-import org.deeplearning4j.nn.conf.layers.DenseLayer;
-import org.deeplearning4j.nn.conf.layers.OutputLayer;
-import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
-import org.nd4j.linalg.activations.Activation;
-import org.nd4j.linalg.api.ops.LossFunction;
-import org.nd4j.linalg.lossfunctions.ILossFunction;
-import org.nd4j.linalg.lossfunctions.LossFunctions;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.deeplearning4j.nn.api.OptimizationAlgorithm;
-import org.deeplearning4j.nn.conf.GradientNormalization;
-import org.deeplearning4j.nn.conf.Updater;
-import org.deeplearning4j.nn.weights.WeightInit;
-import org.nd4j.linalg.learning.config.Adam;
-import org.nd4j.linalg.learning.regularization.Regularization;
-import org.nd4j.linalg.learning.regularization.WeightDecay;
-import org.deeplearning4j.nn.conf.layers.BatchNormalization;
+import ai.djl.nn.Block;
+import ai.djl.nn.SequentialBlock;
+import ai.djl.nn.core.Linear;
+import ai.djl.nn.norm.Dropout;
 
-public class Discriminator {
-    private MultiLayerNetwork model;
+import ai.djl.nn.Activation;
 
-    public Discriminator() {
-        int numInputs = 784;
-        int numOutputs = 1;
-        double dropoutProb = 0.3;
+class Discriminator extends SequentialBlock {
+    Discriminator() {
+        super();
+        Block block = Linear.builder().setUnits(256).build();
+        addChildBlock("linear1", block);
+        block = Activation.reluBlock();
+        addChildBlock("relu1", block);
+        block = Dropout.builder().optRate(0.5f).build();
+        addChildBlock("dropout1", block);
 
-        MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
-                .seed(123)
-                .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-                .updater(new Adam(0.0002, 0.5, 0.999, 1e-8))
-                .gradientNormalization(GradientNormalization.RenormalizeL2PerLayer)
-                .list()
-                .layer(new DenseLayer.Builder().nIn(numInputs).nOut(1024)
-                        .activation(Activation.RELU).dropOut(dropoutProb).build())
-                .layer(new DenseLayer.Builder().nIn(1024).nOut(512)
-                        .activation(Activation.RELU).dropOut(dropoutProb).build())
-                .layer(new DenseLayer.Builder().nIn(512).nOut(256)
-                        .activation(Activation.RELU).dropOut(dropoutProb).build())
-                .layer(new OutputLayer.Builder(LossFunctions.LossFunction.XENT)
-                        .nIn(256).nOut(numOutputs).activation(Activation.SIGMOID).build())
-                .build();
+        block = Linear.builder().setUnits(128).build();
+        addChildBlock("linear2", block);
+        block = Activation.reluBlock();
+        addChildBlock("relu2", block);
+        block = Dropout.builder().optRate(0.5f).build();
+        addChildBlock("dropout2", block);
 
-        model = new MultiLayerNetwork(conf);
-        model.init();
-    }
-
-    public double train(INDArray inputs, INDArray labels) {
-        model.setInput(inputs);
-        model.setLabels(labels);
-        model.fit();
-        return model.score();
-    }
-
-    public void setParams(Adam optimizer, LossFunction lossFunction) {
-        MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
-                .updater(optimizer)
-                .list()
-                .layer(new OutputLayer.Builder((ILossFunction) lossFunction)
-                        .activation(Activation.SIGMOID)
-                        .nIn(256)
-                        .nOut(1)
-                        .build())
-                .build();
-
-        model.setLayerWiseConfigurations(conf);
-    }
-
-
-    public MultiLayerNetwork getModel() {
-        return model;
+        block = Linear.builder().setUnits(1).build();
+        addChildBlock("linear3", block);
+        block = Activation.sigmoidBlock();
+        addChildBlock("sigmoid", block);
     }
 }

@@ -1,77 +1,72 @@
 package org.example;
 
-import org.deeplearning4j.nn.api.OptimizationAlgorithm;
-import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
-import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
-import org.deeplearning4j.nn.conf.layers.DenseLayer;
-import org.deeplearning4j.nn.conf.layers.OutputLayer;
-import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
-import org.nd4j.linalg.activations.Activation;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.api.ops.LossFunction;
-import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.learning.config.Adam;
-import org.nd4j.linalg.lossfunctions.ILossFunction;
-import org.nd4j.linalg.lossfunctions.LossFunctions;
 
-public class Generator {
-    private static MultiLayerNetwork model;
+import ai.djl.Device;
+import ai.djl.ndarray.NDArray;
+import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
+import ai.djl.ndarray.types.DataType;
+import ai.djl.ndarray.types.Shape;
+import ai.djl.nn.Block;
+import ai.djl.nn.SequentialBlock;
+import ai.djl.nn.core.Linear;
+import ai.djl.nn.Activation;
 
-    public Generator() {
-        int numInputs = 100;
-        int numOutputs = 784;
+class Generator extends SequentialBlock {
+    private static final int LATENT_DIM = 100;
+    private Device device;
+    Generator() {
+        super();
+        Block block = Linear.builder().setUnits(128).build();
+        addChildBlock("linear1", block);
+        block = Activation.reluBlock();
+        addChildBlock("relu1", block);
 
-        MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
-                .seed(123)
-                .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-                .updater(org.nd4j.linalg.learning.config.Adam.builder().learningRate(0.01).beta1(0.5).build())
-                .list()
-                .layer(new DenseLayer.Builder().nIn(numInputs).nOut(256)
-                        .activation(Activation.RELU).build())
-                .layer(new DenseLayer.Builder().nIn(256).nOut(512)
-                        .activation(Activation.RELU).build())
-                .layer(new DenseLayer.Builder().nIn(512).nOut(1024)
-                        .activation(Activation.RELU).build())
-                .layer(new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
-                        .nIn(1024).nOut(numOutputs).activation(Activation.TANH).build())
-                .build();
+        block = Linear.builder().setUnits(256).build();
+        addChildBlock("linear2", block);
+        block = Activation.reluBlock();
+        addChildBlock("relu2", block);
 
-        model = new MultiLayerNetwork(conf);
-        model.init();
+        block = Linear.builder().setUnits(784).build();
+        addChildBlock("linear3", block);
+        block = Activation.tanhBlock();
+        addChildBlock("tanh", block);
+    }
+    Generator(Device device) {
+        super();
+        this.device = device;
+
+        Block block = Linear.builder().setUnits(128).build();
+        addChildBlock("linear1", block);
+        block = Activation.reluBlock();
+        addChildBlock("relu1", block);
+
+        block = Linear.builder().setUnits(256).build();
+        addChildBlock("linear2", block);
+        block = Activation.reluBlock();
+        addChildBlock("relu2", block);
+
+        block = Linear.builder().setUnits(784).build();
+        addChildBlock("linear3", block);
+        block = Activation.tanhBlock();
+        addChildBlock("tanh", block);
     }
 
-    public void setParams(Adam optimizer, LossFunction lossFunction) {
-        MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
-                .updater(optimizer)
-                .list()
-                .layer(new OutputLayer.Builder((ILossFunction) lossFunction)
-                        .activation(Activation.SIGMOID)
-                        .nIn(256)
-                        .nOut(1)
-                        .build())
-                .build();
-
-        model.setLayerWiseConfigurations(conf);
+    NDList generateSamples(int batchSize) {
+        NDList latentSamples = generateLatentSamples(batchSize);
+        return forward(null, latentSamples, false, null);
     }
 
-    public static INDArray forward(INDArray latentSpaceSamples) {
-        INDArray generated = model.output(latentSpaceSamples);
-        generated = generated.reshape(latentSpaceSamples.size(0), 1, 28, 28);
-        return generated;
+    NDList generateLatentSamples(int batchSize) {
+        NDManager manager = NDManager.newBaseManager();
+        Shape shape = new Shape(batchSize, LATENT_DIM);
+        NDArray randomSamples = manager.randomUniform(0, 1, shape, DataType.FLOAT32);
+        return new NDList(randomSamples);
     }
 
-    public double train(INDArray latentSpaceSamples, INDArray labels) {
-        model.setInput(latentSpaceSamples);
-        model.setLabels(labels);
-        model.computeGradientAndScore();
-        model.fit();
-        return model.score();
-    }
-
-    public INDArray generateSamples(int batchSize) {
-        INDArray noise = Nd4j.randn(batchSize, 100);
-        INDArray generated = model.output(noise);
-        generated = generated.reshape(batchSize, 1, 28, 28);
-        return generated;
+    NDList getGeneratedLabels(int batchSize) {
+        NDManager manager = NDManager.newBaseManager();
+        NDArray ones = manager.ones(new Shape(batchSize, 1), DataType.FLOAT32);
+        return new NDList(ones);
     }
 }
