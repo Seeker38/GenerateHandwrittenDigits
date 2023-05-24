@@ -47,6 +47,7 @@ public class HandwrittenDigitsGenerator {
         // Load the MNIST dataset
         DataSetIterator trainData = new MnistDataSetIterator(BATCH_SIZE, 100);
 
+
         // Create the discriminator network
         MultiLayerConfiguration discriminatorConf = new NeuralNetConfiguration.Builder()
                 .seed(12345)
@@ -93,14 +94,14 @@ public class HandwrittenDigitsGenerator {
         // Train the networks
         for (int epoch = 0; epoch < EPOCHS; epoch++) {
             // Train the discriminator
-            for (int i = 0; i < trainData.next().numExamples(); i++) {
+            while (trainData.hasNext()) {
                 DataSet ds = trainData.next();
                 double realLabel = 1.0;
                 double fakeLabel = 0.0;
 //                double[] epsilonArray = {1e-6};
 
 
-                Nd4jCuda.Workspace workspace = new Nd4jCuda.Workspace();
+//                Nd4jCuda.Workspace workspace = new Nd4jCuda.Workspace();
                 Set<ArrayType> arrayTypes = Collections.singleton(ArrayType.ACTIVATIONS);
 
                 // Create WorkspaceConfiguration

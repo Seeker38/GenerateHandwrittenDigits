@@ -9,47 +9,40 @@
     <version>1.0-SNAPSHOT</version>
     <dependencies>
 
-        <!-- https://mvnrepository.com/artifact/org.tensorflow/libtensorflow -->
+
+
+        <!-- https://mvnrepository.com/artifact/org.bytedeco/cuda -->
         <dependency>
-            <groupId>org.tensorflow</groupId>
-            <artifactId>libtensorflow</artifactId>
-            <version>1.15.0</version>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>cuda</artifactId>
+            <version>11.6-8.3-1.5.7</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.tensorflow/libtensorflow_jni_gpu -->
+        <!-- https://mvnrepository.com/artifact/org.bytedeco/cuda-platform -->
         <dependency>
-            <groupId>org.tensorflow</groupId>
-            <artifactId>libtensorflow_jni_gpu</artifactId>
-            <version>1.15.0</version>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>cuda-platform</artifactId>
+            <version>11.6-8.3-1.5.7</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.bytedeco/javacpp -->
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>javacpp</artifactId>
+            <version>1.5.7</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.bytedeco/javacpp-platform -->
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>javacpp-platform</artifactId>
+            <version>1.5.7</version>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/ai.djl/api -->
-        <dependency>
-            <groupId>ai.djl</groupId>
-            <artifactId>api</artifactId>
-            <version>0.16.0</version>
-        </dependency>
 
-        <!-- https://mvnrepository.com/artifact/ai.djl.pytorch/pytorch-engine -->
-        <dependency>
-            <groupId>ai.djl.pytorch</groupId>
-            <artifactId>pytorch-engine</artifactId>
-            <version>0.16.0</version>
-        </dependency>
 
-        <!-- https://mvnrepository.com/artifact/ai.djl.pytorch/pytorch-native-auto -->
+        <!-- https://mvnrepository.com/artifact/org.bytedeco/openblas -->
         <dependency>
-            <groupId>ai.djl.pytorch</groupId>
-            <artifactId>pytorch-native-auto</artifactId>
-            <version>1.8.1</version>
-            <scope>runtime</scope>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.pytorch/pytorch_java_only -->
-        <dependency>
-            <groupId>org.pytorch</groupId>
-            <artifactId>pytorch_java_only</artifactId>
-            <version>1.9.0</version>
-            <scope>provided</scope>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>openblas</artifactId>
+            <version>0.3.19-1.5.7</version>
         </dependency>
 
 
@@ -73,7 +66,7 @@
         <dependency>
             <groupId>org.deeplearning4j</groupId>
             <artifactId>deeplearning4j-core</artifactId>
-            <version>1.0.0-M2.1</version>
+            <version>1.0.0-M1.1</version>
         </dependency>
 
 
@@ -81,7 +74,7 @@
         <dependency>
             <groupId>org.deeplearning4j</groupId>
             <artifactId>deeplearning4j-nn</artifactId>
-            <version>1.0.0-M2.1</version>
+            <version>1.0.0-M1.1</version>
         </dependency>
 
 <!--        <dependency>-->
@@ -93,21 +86,29 @@
         <dependency>
             <groupId>org.nd4j</groupId>
             <artifactId>nd4j-common</artifactId>
-            <version>1.0.0-beta7</version>
+            <version>1.0.0-M1.1</version>
         </dependency>
+
+<!--        &lt;!&ndash; https://mvnrepository.com/artifact/clojure-interop/org.nd4j.nativeblas &ndash;&gt;-->
+<!--        <dependency>-->
+<!--            <groupId>clojure-interop</groupId>-->
+<!--            <artifactId>org.nd4j.nativeblas</artifactId>-->
+<!--            <version>1.0.0</version>-->
+<!--        </dependency>-->
+
 
         <!-- https://mvnrepository.com/artifact/org.nd4j/nd4j-parameter-server -->
         <dependency>
             <groupId>org.nd4j</groupId>
             <artifactId>nd4j-parameter-server</artifactId>
-            <version>1.0.0-M2.1</version>
+            <version>1.0.0-M1.1</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.deeplearning4j/deeplearning4j-ui -->
         <dependency>
             <groupId>org.deeplearning4j</groupId>
             <artifactId>deeplearning4j-ui</artifactId>
-            <version>1.0.0-M2.1</version>
+            <version>1.0.0-M1.1</version>
         </dependency>
 <!--        <dependency>-->
 <!--            <groupId>org.nd4j</groupId>-->
@@ -119,7 +120,7 @@
         <dependency>
             <groupId>org.deeplearning4j</groupId>
             <artifactId>deeplearning4j-modelimport</artifactId>
-            <version>1.0.0-M2.1</version>
+            <version>1.0.0-M1.1</version>
         </dependency>
 
 
@@ -134,15 +135,16 @@
         <dependency>
             <groupId>org.nd4j</groupId>
             <artifactId>nd4j-native-platform</artifactId>
-            <version>1.0.0-beta7</version>
+            <version>1.0.0-M1.1</version>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/org.nd4j/nd4j-cuda-10.2 -->
+        <!-- https://mvnrepository.com/artifact/org.nd4j/nd4j-cuda-11.0 -->
         <dependency>
             <groupId>org.nd4j</groupId>
-            <artifactId>nd4j-cuda-10.2</artifactId>
-            <version>1.0.0-beta7</version>
+            <artifactId>nd4j-cuda-11.0</artifactId>
+            <version>1.0.0-M1.1</version>
         </dependency>
+
 
 
 
