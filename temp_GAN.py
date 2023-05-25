@@ -146,6 +146,20 @@ for epoch in range(num_epochs):
     image_grid = torchvision.utils.make_grid(generated_samples, nrow=4, normalize=True)
     image = transforms.ToPILImage()(image_grid)
     images.append(image)
+    
+    # Check for Nash equilibrium
+    if epoch % 10 == 0:
+        discriminator.eval()
+        generator.eval()
+
+        latent_space_samples = torch.randn((batch_size, 100)).to(device=device)
+        generated_samples = generator(latent_space_samples)
+        output_discriminator_generated = discriminator(generated_samples)
+
+        print(f"Epoch: {epoch} Output D(G(z)): {output_discriminator_generated.mean()}")
+
+        discriminator.train()
+        generator.train()
 
 imageio.mimsave('generated_images.gif', images, fps=5)
 
